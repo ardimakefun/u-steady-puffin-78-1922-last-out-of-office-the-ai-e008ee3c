@@ -34,10 +34,19 @@ function main(): void {
   writeFileSync(outPath, REPLY, "utf8");
 
   // Re-read the bytes from disk and re-validate the gate against them.
+  // Reviser: also assert the written bytes are exactly the intended UTF-8
+  // encoding (byte-length match guards against silent encoding corruption)
+  // and that no NUL byte crept into the file.
   const written = readFileSync(outPath, "utf8");
   validateGate(written);
   if (written !== REPLY) {
     throw new Error("entry.txt on disk differs from the intended reply");
+  }
+  if (Buffer.byteLength(written, "utf8") !== Buffer.byteLength(REPLY, "utf8")) {
+    throw new Error("entry.txt byte length differs from the intended reply");
+  }
+  if (written.includes("\0")) {
+    throw new Error("entry.txt contains a NUL byte");
   }
 }
 
